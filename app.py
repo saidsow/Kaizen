@@ -1,6 +1,6 @@
 import streamlit as st
-from pages.page1 import display_page as display_page1
-from pages.page2 import display_page as display_page2
+from page1 import display_page as display_page1
+from page2 import display_page as display_page2
 
 #Initialize session state
 if "page" not in st.session_state:
