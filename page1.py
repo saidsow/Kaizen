@@ -1,5 +1,23 @@
 import streamlit as st
 import pycountry
+from pdfrw import PdfReader, PdfWriter, PageMerge
+import io
+import base64
+import pdfrw
+
+def fill_pdf(template_path, data_dict):
+    template_pdf = PdfReader(template_path)
+    annotations = template_pdf.pages[0]['/Annots']
+    for annotation in annotations:
+        if annotation['/T']:
+            key = annotation['/T'][1:-1]
+            if key in data_dict:
+                annotation.update(
+                    pdfrw.PdfDict(V='{}'.format(data_dict[key]))
+                )
+    output_pdf = io.BytesIO()
+    PdfWriter(output_pdf, trailer=template_pdf).write()
+    return output_pdf.getvalue()
 
 def display_page():
     st.image("Banner.jpg")
@@ -72,3 +90,16 @@ def display_page():
             st.session_state.completed_page1 = True
             st.session_state.page = "page2"
             st.rerun()
+
+    # Generate PDF
+    if st.button("Test Submit"):
+        if not data_dict["first_name"] or not data_dict["last_name"] or not data_dict["date_of_birth"]:
+            st.error("Please fill out all mandatory fields marked with * before generating the PDF.")
+        else:
+            template_path = "template.pdf"  # Path to your template PDF
+            pdf_data = fill_pdf(template_path, data_dict)
+
+            b64 = base64.b64encode(pdf_data).decode()
+            href = f'<a href="data:application/octet-stream;base64,{b64}" download="filled_form.pdf">Download PDF</a>'
+            st.markdown(href, unsafe_allow_html=True)
+            st.success("PDF generated successfully!")
